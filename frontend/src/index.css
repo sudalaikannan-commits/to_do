@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-paper text-neutral-900 antialiased;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.card {
+  @apply bg-white rounded-2xl shadow-card border border-neutral-200/70;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 bg-ationic-yellow text-black font-semibold rounded-xl px-4 py-2 text-sm hover:brightness-95 active:brightness-90 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 disabled:opacity-50;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 bg-white text-neutral-800 border border-neutral-200 font-medium rounded-xl px-4 py-2 text-sm hover:bg-neutral-50 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2;
+}
+
+.input {
+  @apply w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-black;
+}
+
+.label {
+  @apply block text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-1;
+}
+
+.badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+}
+
+.skeleton {
+  @apply animate-pulse bg-neutral-200 rounded-lg;
+}
+
+/* Kanban horizontal scroll on small screens */
+.kanban-scroll {
+  scrollbar-width: thin;
+}
+
+/* Focus visibility */
+:focus-visible {
+  outline: 2px solid #0a0a0a;
+  outline-offset: 2px;
+}
