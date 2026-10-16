@@ -171,13 +171,6 @@
         { "fieldPath": "bugId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "subtasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "position", "order": "ASCENDING" }
-      ]
     }
   ],
   "fieldOverrides": []
