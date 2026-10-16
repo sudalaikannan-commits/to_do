@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth";
-import { SocketProvider } from "./lib/socket";
+import { RealtimeProvider } from "./lib/realtime";
 import { get } from "./lib/api";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
@@ -79,7 +79,7 @@ function Shell() {
   }
 
   return (
-    <SocketProvider onEvent={onSocketEvent}>
+    <RealtimeProvider onEvent={onSocketEvent}>
       <Layout toast={toast}>
         <div className="card mb-4 flex flex-wrap items-center gap-2 p-3">
           <input
@@ -110,7 +110,7 @@ function Shell() {
           <Route path="*" element={<div className="card p-8 text-center text-sm text-neutral-500">Page not found. <Link className="underline" to="/">Go home</Link></div>} />
         </Routes>
       </Layout>
-    </SocketProvider>
+    </RealtimeProvider>
   );
 }
 

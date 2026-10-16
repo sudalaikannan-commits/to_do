@@ -1,0 +1,38 @@
+rules_version = '2';
+// Ationic attachments — Firebase Storage Rules.
+// Private by default: only members of the related project can read/write.
+// Metadata (name, size, mime) is validated here AND server-side in Functions.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function projectMember(projectId) {
+      return signedIn() && request.auth.uid in
+        firestore.get(/databases/(default)/documents/projects/$(projectId)).data.memberIds;
+    }
+    function validAttachment() {
+      return request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*|application/pdf');
+    }
+
+    match /attachments/{projectId}/{fileName} {
+      allow read: if projectMember(projectId);
+      allow write: if projectMember(projectId) && validAttachment();
+      allow delete: if projectMember(projectId);
+    }
+
+    // User avatars (small images, owner-only write, members can view).
+    match /avatars/{uid}/{fileName} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

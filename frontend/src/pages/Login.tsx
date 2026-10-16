@@ -24,9 +24,10 @@ export default function Login() {
       if (mode === "login") {
         await login(email, password);
       } else {
+        // Bootstrap creates the first Firebase Auth user + ADMIN profile server-side,
+        // then we sign in with the same credentials via the Firebase client SDK.
         await post("/api/auth/bootstrap", { name, email, password });
-        window.location.href = "/";
-        return;
+        await login(email, password);
       }
       navigate("/");
     } catch (err) {

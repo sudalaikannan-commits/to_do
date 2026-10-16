@@ -1,5 +1,11 @@
 # Ationic Project Management Platform
 
+> **New Firebase architecture:** Netlify frontend + Firebase Auth + Firestore +
+> Cloud Functions + Storage. See **[FIREBASE.md](./FIREBASE.md)** for the full
+> migration plan, data model, deployment and data-migration guides. The
+> `backend/` (Express + PostgreSQL/Prisma) below is the preserved legacy
+> local-dev stack and migration source — it is not deleted.
+
 Internal agency workspace for **Ationic** (https://ationic.agency/): multiple projects, task tracking,
 website bug tracking, deadlines, assignments, comments, notifications and real-time collaboration
 for the two-person agency team.

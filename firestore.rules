@@ -1,0 +1,117 @@
+rules_version = '2';
+// Ationic workspace — Firestore Security Rules.
+// Primary enforcement lives in Cloud Functions (all mutations go through the
+// REST API with verified ID tokens). These rules additionally:
+//  - allow members to READ workspace data (required for onSnapshot realtime),
+//  - deny ALL direct client writes except a tightly-scoped self-profile update,
+//  - keep admin-only operations server-side (custom claim `admin: true`).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+    function wsMember() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/workspaces/ationic/members/$(request.auth.uid));
+    }
+    function projectMember(projectId) {
+      return signedIn() && request.auth.uid in
+        get(/databases/$(database)/documents/projects/$(projectId)).data.memberIds;
+    }
+
+    // --- users ---
+    match /users/{uid} {
+      // Members can read the team directory (needed for assignee pickers).
+      allow read: if wsMember() || isAdmin();
+      // Users may update only their own display profile — role is immutable here.
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.keys().hasOnly(
+             ['email', 'name', 'role', 'avatarUrl', 'mustResetPassword', 'migratedAt', 'createdAt', 'updatedAt']);
+      allow create, delete: if false; // via Cloud Functions (Admin SDK) only
+    }
+
+    // --- workspace + memberships ---
+    match /workspaces/{ws} {
+      allow read: if wsMember() || isAdmin();
+      allow write: if false;
+      match /members/{uid} {
+        allow read: if wsMember() || isAdmin();
+        allow write: if false;
+      }
+    }
+
+    // --- projects ---
+    match /projects/{projectId} {
+      allow read: if wsMember() &&
+        (request.auth.uid in resource.data.memberIds || isAdmin());
+      allow write: if false;
+    }
+
+    // --- tasks (+ subtasks) ---
+    match /tasks/{taskId} {
+      allow read: if wsMember() && projectMember(resource.data.projectId);
+      allow write: if false;
+      match /subtasks/{subId} {
+        allow read: if wsMember() &&
+          projectMember(get(/databases/$(database)/documents/tasks/$(taskId)).data.projectId);
+        allow write: if false;
+      }
+    }
+
+    // --- bugs ---
+    match /bugs/{bugId} {
+      allow read: if wsMember() && projectMember(resource.data.projectId);
+      allow write: if false;
+    }
+
+    // --- comments ---
+    match /comments/{commentId} {
+      allow read: if wsMember() && (
+        (resource.data.projectId != null && projectMember(resource.data.projectId)) ||
+        (resource.data.taskId != null && projectMember(
+          get(/databases/$(database)/documents/tasks/$(resource.data.taskId)).data.projectId)) ||
+        (resource.data.bugId != null && projectMember(
+          get(/databases/$(database)/documents/bugs/$(resource.data.bugId)).data.projectId))
+      );
+      allow write: if false;
+    }
+
+    // --- labels (read-only reference data for clients) ---
+    match /labels/{labelId} {
+      allow read: if wsMember();
+      allow write: if false;
+    }
+
+    // --- notifications: recipients can read + mark their own as read ---
+    match /notifications/{notifId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow update: if signedIn() && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt']);
+      allow create, delete: if false;
+    }
+
+    // --- activity log: read-only for members ---
+    match /activities/{logId} {
+      allow read: if wsMember();
+      allow write: if false;
+    }
+
+    // --- attachments metadata: read-only for project members ---
+    match /attachments/{attId} {
+      allow read: if wsMember() &&
+        (resource.data.projectId == null || projectMember(resource.data.projectId));
+      allow write: if false;
+    }
+
+    // --- counters (BUG-XXXX sequencing): server-only ---
+    match /counters/{counterId} {
+      allow read, write: if false;
+    }
+  }
+}

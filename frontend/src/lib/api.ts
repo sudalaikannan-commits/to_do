@@ -1,3 +1,7 @@
+import { auth } from "./firebase";
+
+// Same interface as the legacy REST client; requests now carry the Firebase
+// ID token (verified server-side in Cloud Functions) instead of a cookie.
 const BASE = import.meta.env.VITE_API_URL ?? "";
 
 export class ApiError extends Error {
@@ -8,10 +12,18 @@ export class ApiError extends Error {
   }
 }
 
+async function authHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const user = auth.currentUser;
+  if (user) {
+    headers.Authorization = `Bearer ${await user.getIdToken()}`;
+  }
+  return headers;
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+    headers: { ...(await authHeaders()), ...((init?.headers ?? {}) as Record<string, string>) },
     ...init,
   });
   if (res.status === 204) return undefined as T;
